@@ -252,3 +252,50 @@ h1, h2, h3 { font-family: Manrope, sans-serif; }
   font-weight: 600;
   cursor: pointer;
 }
+/* Quiz history search bar */
+.history-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 20px;
+  padding: 0 15px;
+  min-height: 52px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: #9290a5;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.history-search:focus-within {
+  border-color: #9b8be9;
+  box-shadow: 0 0 0 3px #8c77e91a;
+}
+
+.history-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.history-search input::placeholder {
+  color: #aaa8ba;
+}
+
+.history-search button {
+  display: grid;
+  place-items: center;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  color: #9290a5;
+}
+
+.history-search button:hover {
+  color: var(--purple);
+}

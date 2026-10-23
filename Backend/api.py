@@ -474,7 +474,14 @@ def create_quiz_for_user(payload, user_id):
             status_code=502,
             detail="The AI could not generate a quiz. Please try again.",
         )
+        # Use the user's topic if the AI returns a generic title.
+    topic = (quiz.topic or "").strip()
 
+    if not topic or topic.lower() in {"quiz", "questions"}:
+        topic = payload.content.strip().replace("\n", " ")
+
+    quiz.topic = topic[:100]
+    
     session_id = str(uuid.uuid4())
     quiz_date = datetime.now().isoformat(timespec="seconds")
 

@@ -587,7 +587,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowLeft, ArrowRight, BookOpen, Brain, Check, CheckCircle2,
   ChevronDown, CircleHelp, Clock3, Code2, FileText, Flame, History,
-  LayoutDashboard, LoaderCircle, Menu, RotateCcw, Sparkles, Target,
+  LayoutDashboard, LoaderCircle, Menu, RotateCcw, Sparkles, Search, Target,
   Trophy, XCircle, Zap,
 } from "lucide-react";
 import {
@@ -629,6 +629,7 @@ function App() {
   const [results, setResults] = useState([]);
   const [score, setScore] = useState(0);
   const [history, setHistory] = useState([]);
+  const [historySearch, setHistorySearch] = useState("");
   const [historyDetail, setHistoryDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -695,6 +696,23 @@ function handleLogout() {
   const currentQuestion = quiz?.questions?.[questionIndex];
   const currentAnswers = answers[questionIndex] || [];
   const percentage = results.length ? Math.round((score / results.length) * 100) : 0;
+  const filteredHistory = history.filter((item) => {
+  const search = historySearch.trim().toLowerCase();
+
+  if (!search) return true;
+
+  const topic = item.quiz?.topic || item.topic || "";
+  const questions = (item.quiz?.questions || [])
+    .map((question) => question.question || "")
+    .join(" ");
+
+  const date = formatDate(item.date);
+  const scoreText = `${item.score ?? 0}/${(item.results || []).length}`;
+
+  return `${topic} ${questions} ${date} ${scoreText}`
+    .toLowerCase()
+    .includes(search);
+});
 
   const completedCount = useMemo(
     () => quiz?.questions?.filter((_, i) => (answers[i] || []).some((a) => a.trim())).length || 0,
@@ -1124,19 +1142,135 @@ function handleLogout() {
 
           {page === "history" && view === "history" && (
             <section className="history-page">
-              <div className="page-title-row"><div><div className="eyebrow"><History size={14} /> YOUR LEARNING JOURNEY</div><h1>Quiz history</h1><p>Every attempt is progress. Revisit what you've practised.</p></div><button className="primary-button" onClick={goCreate}><Sparkles size={17} /> New quiz</button></div>
-              <div className="history-summary"><div className="history-summary-icon"><BookOpen size={20} /></div><div><strong>{history.length} saved {history.length === 1 ? "quiz" : "quizzes"}</strong><p>Your completed practice sessions, all in one place.</p></div></div>
-              {loading && !history.length ? <div className="loading-state"><LoaderCircle className="spin" size={25} /><span>Loading your history...</span></div> : history.length === 0 ? (
-                <div className="empty-state"><div><History size={28} /></div><h2>Your learning story starts here</h2><p>Complete your first quiz and it will appear here for future review.</p><button className="primary-button" onClick={goCreate}>Create your first quiz <ArrowRight size={16} /></button></div>
+              <div className="page-title-row">
+                <div>
+                  <div className="eyebrow">
+                    <History size={14} /> YOUR LEARNING JOURNEY
+                  </div>
+                  <h1>Quiz history</h1>
+                  <p>Every attempt is progress. Revisit what you've practised.</p>
+                </div>
+
+                <button className="primary-button" onClick={goCreate}>
+                  <Sparkles size={17} /> New quiz
+                </button>
+              </div>
+
+              <div className="history-summary">
+                <div className="history-summary-icon">
+                  <BookOpen size={20} />
+                </div>
+                <div>
+                  <strong>
+                    {history.length} saved{" "}
+                    {history.length === 1 ? "quiz" : "quizzes"}
+                  </strong>
+                  <p>Your completed practice sessions, all in one place.</p>
+                </div>
+              </div>
+
+              <div className="history-search">
+                <Search size={19} />
+                <input
+                  type="search"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Search by topic, question, date or score..."
+                  aria-label="Search quiz history"
+                />
+
+                {historySearch && (
+                  <button
+                    type="button"
+                    onClick={() => setHistorySearch("")}
+                    aria-label="Clear search"
+                  >
+                    <XCircle size={17} />
+                  </button>
+                )}
+              </div>
+
+              {loading && !history.length ? (
+                <div className="loading-state">
+                  <LoaderCircle className="spin" size={25} />
+                  <span>Loading your history...</span>
+                </div>
+              ) : history.length === 0 ? (
+                <div className="empty-state">
+                  <div><History size={28} /></div>
+                  <h2>Your learning story starts here</h2>
+                  <p>
+                    Complete your first quiz and it will appear here for future review.
+                  </p>
+                  <button className="primary-button" onClick={goCreate}>
+                    Create your first quiz <ArrowRight size={16} />
+                  </button>
+                </div>
+              ) : filteredHistory.length === 0 ? (
+                <div className="empty-state">
+                  <div><Search size={28} /></div>
+                  <h2>No matching quizzes found</h2>
+                  <p>
+                    Try another topic or question, or clear your search.
+                  </p>
+                  <button
+                    className="secondary-button"
+                    onClick={() => setHistorySearch("")}
+                  >
+                    Clear search
+                  </button>
+                </div>
               ) : (
                 <div className="history-table">
-                  <div className="history-table-head"><span>QUIZ TOPIC</span><span>DATE</span><span>SCORE</span><span /></div>
-                  {history.map((item) => <button className="history-row" key={item.id} onClick={() => openHistoryItem(item.id)}>
-                    <span className="history-topic"><span className="history-topic-icon"><BookOpen size={17} /></span><span><strong>{item.topic || "Quiz"}</strong><small>{item.question_count} questions</small></span></span>
-                    <span className="history-date">{formatDate(item.date)}</span>
-                    <span className="history-score"><strong>{item.score}/{item.total}</strong><small>{item.total ? Math.round((item.score / item.total) * 100) : 0}%</small></span>
-                    <span className="history-open"><ArrowRight size={17} /></span>
-                  </button>)}
+                  <div className="history-table-head">
+                    <span>QUIZ TOPIC</span>
+                    <span>DATE</span>
+                    <span>SCORE</span>
+                    <span />
+                  </div>
+
+                  {filteredHistory.map((item) => {
+                    const topic =
+                      item.quiz?.topic || item.topic || "Untitled quiz";
+
+                    const total =
+                      item.results?.length ?? item.total ?? item.question_count ?? 0;
+
+                    return (
+                      <button
+                        className="history-row"
+                        key={item.id}
+                        onClick={() => openHistoryItem(item.id)}
+                      >
+                        <span className="history-topic">
+                          <span className="history-topic-icon">
+                            <BookOpen size={17} />
+                          </span>
+                          <span>
+                            <strong>{topic}</strong>
+                            <small>{total} questions</small>
+                          </span>
+                        </span>
+
+                        <span className="history-date">
+                          {formatDate(item.date)}
+                        </span>
+
+                        <span className="history-score">
+                          <strong>{item.score ?? 0}/{total}</strong>
+                          <small>
+                            {total
+                              ? Math.round(((item.score ?? 0) / total) * 100)
+                              : 0}%
+                          </small>
+                        </span>
+
+                        <span className="history-open">
+                          <ArrowRight size={17} />
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </section>
